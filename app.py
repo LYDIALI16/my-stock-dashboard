@@ -95,12 +95,17 @@ st.subheader("🌍 宏观战区 (大盘风向标)")
 cols = st.columns(3)
 for i, (name, ticker) in enumerate(MACRO.items()):
     try:
-        data = yf.download(ticker, period="5d", progress=False)['Close'].squeeze()
-        current = round(data.iloc[-1], 2)
-        diff = round(current - data.iloc[-2], 2)
-        cols[i].metric(label=name, value=current, delta=diff)
-    except:
-        cols[i].metric(label=name, value="获取失败", delta="0")
+        # 改用 history 方法，只取最近5天数据，并去掉所有的空值，确保一定能取到最新价
+        tk = yf.Ticker(ticker)
+        data = tk.history(period="5d")['Close'].dropna() 
+        if len(data) >= 2:
+            current = round(data.iloc[-1], 2)
+            diff = round(current - data.iloc[-2], 2)
+            cols[i].metric(label=name, value=current, delta=diff)
+        else:
+            cols[i].metric(label=name, value="等待开盘", delta="0")
+    except Exception as e:
+        cols[i].metric(label=name, value="接口延迟", delta="0")
 
 st.markdown("---")
 
